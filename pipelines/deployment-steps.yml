@@ -1,0 +1,36 @@
+steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifact: 'ARM'
+      path: $(Build.SourcesDirectory)/bin
+
+  - task: AzureCLI@2
+    displayName: Create Resource Group
+    inputs:
+      azureSubscription: $(AzureSubscription)
+      scriptType: 'ps'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        az group create --name $(resourceGroupName) --location $(location)
+  
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: Deploy App Service Infrastructure
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: $(AzureSubscription)
+      subscriptionId: '2dc9c519-7c91-42b6-a530-8a7d765267f6'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: $(resourceGroupName)
+      location: $(location)
+      templateLocation: 'Linked artifact'
+      csmFile: '../arm/azuredeploy.json'
+      deploymentMode: 'Incremental'
+
+  - task: AzureRmWebAppDeployment@4
+    displayName: Deploy App Service Appliction Code
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: $(AzureSubscription2) 
+      appType: 'webApp'
+      WebAppName: 'webApp-of6ed3fsyatos'
+      Package: '../drop/*.zip'

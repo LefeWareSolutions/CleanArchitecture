@@ -18,7 +18,15 @@ steps:
       configuration: '$(buildConfiguration)'
 
   - task: PublishBuildArtifacts@1
+    displayName: Publish Application Code
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
       ArtifactName: 'drop'
+      publishLocation: 'Container'
+  
+  - task: PublishBuildArtifacts@1
+    displayName: Publish ARM Tempalte
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/AzureInfra'
+      ArtifactName: 'arm'
       publishLocation: 'Container'

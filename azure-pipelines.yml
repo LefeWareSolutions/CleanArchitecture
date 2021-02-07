@@ -26,7 +26,7 @@ stages:
         pool:
           vmImage: windows-latest
         steps:
-          - template: Pipelines/Steps/build-steps.yml
+          - template: ./pipelines/build-steps.yml
 
   - stage: "release_dev"
     displayName: Release Development
@@ -34,9 +34,11 @@ stages:
     condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     variables:
       - name: ResourceGroup
-        value: 
+        value: AZDevOpsTest
       - name: AzureSubscription
-        value: 
+        value: LefeWareSolutions-Production
+      - name: location
+        value: eastus
       - name: environment
         value: 'DEV'
     jobs:
@@ -49,7 +51,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - template: Pipelines/Steps/deployment-steps.yml
+                - template: ./pipelines/deployment-steps.yml
   
                 
   - stage: "release_prd"
@@ -58,9 +60,11 @@ stages:
     condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     variables:
       - name: ResourceGroup
-        value: 
+        value: AZDevOpsTest
       - name: AzureSubscription
-        value: 
+        value: LefeWareSolutions-Production
+      - name: location
+        value: eastus
       - name: environment
         value: 'PRD'
     jobs:
@@ -73,5 +77,5 @@ stages:
           runOnce:
             deploy:
               steps:
-                - template: Pipelines/Steps/deployment-steps.yml
+                - template: ./pipelines/deployment-steps.yml
 
