@@ -14,21 +14,64 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-steps:
-- task: NuGetToolInstaller@1
+stages:
+  - stage: build
+    displayName: Build
+    variables:
+      solution: '**/*.sln'
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Debug'
+    jobs:
+      - job: Build
+        pool:
+          vmImage: windows-latest
+        steps:
+          - template: Pipelines/Steps/build-steps.yml
 
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
+  - stage: "release_dev"
+    displayName: Release Development
+    dependsOn: ["build"]
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    variables:
+      - name: ResourceGroup
+        value: 
+      - name: AzureSubscription
+        value: 
+      - name: environment
+        value: 'DEV'
+    jobs:
+      - deployment: 'dev'
+        displayName: 'Dev'
+        pool:
+          vmImage: windows-latest
+        environment: ${{ variables.ResourceGroup }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: Pipelines/Steps/deployment-steps.yml
+  
+                
+  - stage: "release_prd"
+    displayName: Release Productiont
+    dependsOn: ["release_dev"]
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    variables:
+      - name: ResourceGroup
+        value: 
+      - name: AzureSubscription
+        value: 
+      - name: environment
+        value: 'PRD'
+    jobs:
+      - deployment: 'prd'
+        displayName: 'PRD'
+        pool:
+          vmImage: windows-latest
+        environment: ${{ variables.ResourceGroup }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: Pipelines/Steps/deployment-steps.yml
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
